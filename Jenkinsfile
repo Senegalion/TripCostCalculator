@@ -34,9 +34,9 @@ pipeline {
         stage('Push to Docker Hub') {
             steps {
                 withCredentials([string(credentialsId: 'docker-hub-password', variable: 'DOCKER_PASSWORD')]) {
-                    bat '''
-                    echo %DOCKER_PASSWORD% | docker login -u your-dockerhub-username --password-stdin
-                    docker push %DOCKER_IMAGE%
+                    sh '''
+                    echo $DOCKER_PASSWORD | docker login -u your-dockerhub-username --password-stdin
+                    docker push $DOCKER_IMAGE
                     '''
                 }
             }
