@@ -1,5 +1,10 @@
 pipeline {
     agent any
+         environment {
+                DOCKERHUB_CREDENTIALS_ID = 'Docker_Hub'
+                DOCKERHUB_REPO = 'senegalion/trip-cost-calculator'
+                DOCKER_IMAGE_TAG = 'latest_v1'
+            }
     stages {
         stage('Checkout') {
             steps {
@@ -31,23 +36,21 @@ pipeline {
                 jacoco()
             }
         }
-        stage('Push to Docker Hub') {
+        stage('Build Docker Image') {
             steps {
-                withCredentials([string(credentialsId: 'docker-hub-password', variable: 'DOCKER_PASSWORD')]) {
-                    bat '''
-                    echo %DOCKER_PASSWORD% | docker login -u your-dockerhub-username --password-stdin
-                    docker push %DOCKER_IMAGE%
-                    '''
+                script {
+                    docker.build("${DOCKERHUB_REPO}:${DOCKER_IMAGE_TAG}")
                 }
             }
         }
-    }
-    post {
-        success {
-            echo 'Pipeline executed successfully!'
-        }
-        failure {
-            echo 'Pipeline failed!'
+        stage('Push Docker Image to Docker Hub') {
+            steps {
+                script {
+                    docker.withRegistry('https://index.docker.io/v1/', DOCKERHUB_CREDENTIALS_ID) {
+                        docker.image("${DOCKERHUB_REPO}:${DOCKER_IMAGE_TAG}").push()
+                    }
+                }
+            }
         }
     }
 }
